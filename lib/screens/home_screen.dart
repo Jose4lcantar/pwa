@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // <-- para kIsWeb
 import 'privacy_screen.dart';
+import 'scan_qr_screen.dart';   // <-- tu lector REAL (móvil)
 
 class HomeScreen extends StatelessWidget {
   final String? ticketId;
@@ -47,7 +47,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // 🔹 Botón de escaneo QR o demo
+              // 🔹 Botón escanear QR — YA SOLO versión móvil
               if (!hasTicket)
                 ElevatedButton.icon(
                   icon: const Icon(Icons.qr_code_scanner, size: 28),
@@ -59,19 +59,10 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    // Datos de demo
-                    const demoTicketId = 'DEMO123';
-                    const demoPlate = 'ABC-1234';
-                    const demoModel = 'Toyota Demo';
-
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => HomeScreen(
-                          ticketId: demoTicketId,
-                          plate: demoPlate,
-                          model: demoModel,
-                        ),
+                        builder: (_) => const ScanQRScreen(),
                       ),
                     );
                   },
@@ -86,7 +77,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-              // Mostrar info del vehículo si hay ticket (real o demo)
+              // 🔹 Información del vehículo si ya hay ticket
               if (hasTicket) _buildTicketInfo(),
 
               const SizedBox(height: 24),
@@ -108,20 +99,21 @@ class HomeScreen extends StatelessWidget {
                       '',
                       requiresTicket: true,
                       onTap: () {
-                        final id = ticketId ?? 'DEMO123';
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => ConfirmationScreen(
                               title: 'Solicitud de Vehículo',
-                              message: 'Se ha solicitado el vehículo con ticket: $id',
-                              plate: plate ?? 'ABC-1234',
-                              model: model ?? 'Toyota Demo',
+                              message:
+                                  'Se ha solicitado el vehículo con ticket: $ticketId',
+                              plate: plate ?? '',
+                              model: model ?? '',
                             ),
                           ),
                         );
                       },
                     ),
+
                     // 🔹 Confirmar recepción
                     _buildCard(
                       context,
@@ -131,20 +123,21 @@ class HomeScreen extends StatelessWidget {
                       '',
                       requiresTicket: true,
                       onTap: () {
-                        final id = ticketId ?? 'DEMO123';
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => ConfirmationScreen(
                               title: 'Recepción del Vehículo',
-                              message: 'Recepción confirmada para el vehículo con ticket: $id',
-                              plate: plate ?? 'ABC-1234',
-                              model: model ?? 'Toyota Demo',
+                              message:
+                                  'Recepción confirmada para el vehículo con ticket: $ticketId',
+                              plate: plate ?? '',
+                              model: model ?? '',
                             ),
                           ),
                         );
                       },
                     ),
+
                     // 🔹 Estado del servicio
                     _buildCard(
                       context,
@@ -154,6 +147,7 @@ class HomeScreen extends StatelessWidget {
                       '/service_status',
                       requiresTicket: true,
                     ),
+
                     // 🔹 Historial
                     _buildCard(
                       context,
@@ -163,6 +157,7 @@ class HomeScreen extends StatelessWidget {
                       '/history',
                       requiresTicket: true,
                     ),
+
                     // 🔹 Configuración
                     _buildCard(
                       context,
@@ -208,9 +203,7 @@ class HomeScreen extends StatelessWidget {
   void requireTicket(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
-          "Escanea el código QR para continuar",
-        ),
+        content: Text("Escanea el código QR para continuar"),
         duration: Duration(seconds: 2),
       ),
     );
@@ -302,7 +295,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// 🔹 Pantalla de confirmación visual
 class ConfirmationScreen extends StatelessWidget {
   final String title;
   final String message;
@@ -320,18 +312,25 @@ class ConfirmationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title), backgroundColor: const Color(0xFF0175C2)),
+      appBar:
+          AppBar(title: Text(title), backgroundColor: const Color(0xFF0175C2)),
       body: Center(
         child: Card(
           margin: const EdgeInsets.all(24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 6,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(message, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                Text(
+                  message,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 16),
                 Text("Placa: $plate", style: const TextStyle(fontSize: 16)),
                 Text("Modelo: $model", style: const TextStyle(fontSize: 16)),
