@@ -41,48 +41,47 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDMvLinoPtsoXsoQgIC8M8eosPJQu6o79s',
-    appId: '1:834741301798:web:0b9928af2d6ff1a3252ce7',
-    messagingSenderId: '834741301798',
-    projectId: 'valetflowqr',
-    authDomain: 'valetflowqr.firebaseapp.com',
-    storageBucket: 'valetflowqr.firebasestorage.app',
-    measurementId: 'G-NNH3R0CW8K',
+    apiKey: 'AIzaSyCTSWg1isO7d_zgSKeMTwIjB8NSp_gBU0o',
+    appId: '1:835667889247:web:6d86da70f314e33dea9fea',
+    messagingSenderId: '835667889247',
+    projectId: 'valetflowqr-40544',
+    authDomain: 'valetflowqr-40544.firebaseapp.com',
+    storageBucket: 'valetflowqr-40544.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDZCOmQWbKcbuoyk6czcgtsAcWAqQL8Q70',
-    appId: '1:834741301798:android:28b573a31340364c252ce7',
-    messagingSenderId: '834741301798',
-    projectId: 'valetflowqr',
-    storageBucket: 'valetflowqr.firebasestorage.app',
+    apiKey: 'AIzaSyCv5WWegWn2B9hVTKJfD68KDrNDvSwOHjI',
+    appId: '1:835667889247:android:0e52413c71639ccbea9fea',
+    messagingSenderId: '835667889247',
+    projectId: 'valetflowqr-40544',
+    storageBucket: 'valetflowqr-40544.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyC_s1ThuW8BQCoDKJmN_r9FMk_UlniBMck',
-    appId: '1:834741301798:ios:0bba63cde4651cfa252ce7',
-    messagingSenderId: '834741301798',
-    projectId: 'valetflowqr',
-    storageBucket: 'valetflowqr.firebasestorage.app',
+    apiKey: 'AIzaSyAVekZTEu8rjLLaOaq3MvYZgNo60TXiEn4',
+    appId: '1:835667889247:ios:43a058e6c0949ed0ea9fea',
+    messagingSenderId: '835667889247',
+    projectId: 'valetflowqr-40544',
+    storageBucket: 'valetflowqr-40544.firebasestorage.app',
     iosBundleId: 'com.example.valetPwa',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyC_s1ThuW8BQCoDKJmN_r9FMk_UlniBMck',
-    appId: '1:834741301798:ios:0bba63cde4651cfa252ce7',
-    messagingSenderId: '834741301798',
-    projectId: 'valetflowqr',
-    storageBucket: 'valetflowqr.firebasestorage.app',
+    apiKey: 'AIzaSyAVekZTEu8rjLLaOaq3MvYZgNo60TXiEn4',
+    appId: '1:835667889247:ios:43a058e6c0949ed0ea9fea',
+    messagingSenderId: '835667889247',
+    projectId: 'valetflowqr-40544',
+    storageBucket: 'valetflowqr-40544.firebasestorage.app',
     iosBundleId: 'com.example.valetPwa',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDMvLinoPtsoXsoQgIC8M8eosPJQu6o79s',
-    appId: '1:834741301798:web:2d7eae535738aa78252ce7',
-    messagingSenderId: '834741301798',
-    projectId: 'valetflowqr',
-    authDomain: 'valetflowqr.firebaseapp.com',
-    storageBucket: 'valetflowqr.firebasestorage.app',
-    measurementId: 'G-F9471N1XSX',
+    apiKey: 'AIzaSyCTSWg1isO7d_zgSKeMTwIjB8NSp_gBU0o',
+    appId: '1:835667889247:web:01917e0e11c749abea9fea',
+    messagingSenderId: '835667889247',
+    projectId: 'valetflowqr-40544',
+    authDomain: 'valetflowqr-40544.firebaseapp.com',
+    storageBucket: 'valetflowqr-40544.firebasestorage.app',
   );
+
 }

@@ -21,45 +21,29 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   final _ticketService = TicketService();
   bool _isLoading = false;
   String _statusMessage = '';
-  bool _received = false;
-  bool _delivered = false;
-  bool _requested = false;
 
-  Future<void> _handleAction(String action) async {
+  Future<void> _updateStatus(String newStatus) async {
     setState(() {
       _isLoading = true;
       _statusMessage = '';
     });
 
     try {
-      switch (action) {
-        case 'receive':
-          await _ticketService.updateTicket(
-            ticketId: widget.ticketId,
-            updates: {'received': true, 'receivedAt': DateTime.now().toIso8601String()},
-          );
-          setState(() => _received = true);
-          _statusMessage = 'Vehículo recibido confirmado';
-          break;
-        case 'deliver':
-          await _ticketService.updateTicket(
-            ticketId: widget.ticketId,
-            updates: {'delivered': true, 'deliveredAt': DateTime.now().toIso8601String()},
-          );
-          setState(() => _delivered = true);
-          _statusMessage = 'Entrega del vehículo confirmada';
-          break;
-        case 'request':
-          await _ticketService.updateTicket(
-            ticketId: widget.ticketId,
-            updates: {'requested': true, 'requestedAt': DateTime.now().toIso8601String()},
-          );
-          setState(() => _requested = true);
-          _statusMessage = 'Solicitud de entrega enviada al valet';
-          break;
-      }
+      await _ticketService.updateTicket(
+        ticketId: widget.ticketId,
+        updates: {
+          'status': newStatus,
+          'updatedAt': DateTime.now().toIso8601String(),
+        },
+      );
+
+      setState(() {
+        _statusMessage = 'Estado actualizado a "$newStatus"';
+      });
     } catch (e) {
-      _statusMessage = '⚠️ Error: $e';
+      setState(() {
+        _statusMessage = '⚠️ Error: $e';
+      });
     }
 
     setState(() => _isLoading = false);
@@ -68,53 +52,74 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detalle del Ticket'),
-      ),
+      appBar: AppBar(title: const Text('Detalle del Ticket')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Ticket ID: ${widget.ticketId}', style: const TextStyle(fontSize: 16)),
-            Text('Placa: ${widget.plate}', style: const TextStyle(fontSize: 16)),
-            Text('Modelo: ${widget.model}', style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 24),
-            if (_statusMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  _statusMessage,
-                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+        child: FutureBuilder<Map<String, dynamic>?>(
+          future: _ticketService.getTicket(widget.ticketId),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final ticket = snapshot.data!;
+            final status = ticket['status'] ?? 'desconocido';
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Ticket ID: ${widget.ticketId}'),
+                Text('Placa: ${widget.plate}'),
+                Text('Modelo: ${widget.model}'),
+                const SizedBox(height: 20),
+
+                Text(
+                  'Estado actual: $status',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            SizedBox(
-              width: double.infinity,
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: _received ? null : () => _handleAction('receive'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                          child: const Text('Confirmar Recepción'),
+
+                const SizedBox(height: 20),
+
+                if (_statusMessage.isNotEmpty)
+                  Text(
+                    _statusMessage,
+                    style: const TextStyle(color: Colors.green),
+                  ),
+
+                const SizedBox(height: 20),
+
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else
+                  Column(
+                    children: [
+                      ElevatedButton(
+                        onPressed: status == 'iniciado'
+                            ? () => _updateStatus('solicitado_cliente')
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
                         ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _delivered ? null : () => _handleAction('deliver'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                          child: const Text('Confirmar Entrega'),
+                        child: const Text('Solicitar Vehículo'),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: status == 'solicitado_cliente'
+                            ? () => _updateStatus('entregado')
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
                         ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _requested ? null : () => _handleAction('request'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                          child: const Text('Solicitar Vehículo'),
-                        ),
-                      ],
-                    ),
-            ),
-          ],
+                        child: const Text('Marcar como Recibido'),
+                      ),
+                    ],
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );

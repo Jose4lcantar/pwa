@@ -6,7 +6,10 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Configuración')),
+      appBar: AppBar(
+        title: const Text('Configuración'),
+        backgroundColor: const Color(0xFF0175C2),
+      ),
       body: const Center(
         child: Text('Pantalla de configuración del usuario.'),
       ),

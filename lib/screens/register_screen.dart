@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'privacy_screen.dart';
 
-// ✅ Importar servicio
-import '../services/user_service.dart';
-
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String ticketId;
+
+  const RegisterScreen({super.key, required this.ticketId});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -15,80 +15,103 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
-  // ✅ Instancia de UserService
-  final _userService = UserService();
-
   bool _hasAcceptedPrivacy = false;
-  bool _isLoading = false;
+  bool _isLoading = true;
+  bool _isSaving = false;
 
-  String _errorMessage = '';
+  Map<String, dynamic>? ticketData;
+  String? error;
 
-  /// ✅ Guardar usuario usando UserService()
-  Future<void> _saveUser() async {
-    setState(() {
-      _errorMessage = '';
-      _isLoading = true;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadTicket();
+  }
 
-    final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
+  /// 🟦 Cargar datos existentes desde Firestore
+  Future<void> _loadTicket() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection("qr_codes")
+          .doc(widget.ticketId)
+          .get();
 
-    if (name.isEmpty) {
+      if (!doc.exists) {
+        setState(() {
+          error = "Este ticket no existe.";
+          _isLoading = false;
+        });
+        return;
+      }
+
       setState(() {
-        _errorMessage = 'Por favor ingresa tu nombre.';
+        ticketData = doc.data()!;
         _isLoading = false;
       });
-      return;
+    } catch (e) {
+      setState(() {
+        error = "Error al cargar datos.";
+        _isLoading = false;
+      });
     }
+  }
 
+  /// 🟦 Guardar datos del cliente
+  Future<void> _saveData() async {
     if (!_hasAcceptedPrivacy) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debes aceptar la Política de Privacidad.'),
-        ),
+        const SnackBar(content: Text("Debes aceptar la Política de Privacidad.")),
       );
-      setState(() => _isLoading = false);
       return;
     }
 
-    // ✅ Guarda usando UserService
-    await _userService.saveUser(name: name, phone: phone);
-
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, '/home');
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ingresa tu nombre.")),
+      );
+      return;
     }
 
-    setState(() => _isLoading = false);
+    setState(() => _isSaving = true);
+
+    try {
+      await FirebaseFirestore.instance
+          .collection("qr_codes")
+          .doc(widget.ticketId)
+          .update({
+        "clientName": _nameController.text.trim(),
+        "clientPhone": _phoneController.text.trim(),
+        "status": "iniciado",
+      });
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, "/service_status");
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error al guardar. Inténtalo.")),
+      );
+    }
   }
 
-  void _showPrivacy() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PrivacyScreen(
-          readOnly: false,
-          onAccepted: () {
-            setState(() => _hasAcceptedPrivacy = true);
-            Navigator.pop(context);
-          },
-          onDeclined: () {
-            setState(() => _hasAcceptedPrivacy = false);
-            Navigator.pop(context);
-          },
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
-  }
-
+  /// 🟦 Mostrar pantalla
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (error != null) {
+      return Scaffold(
+        body: Center(child: Text(error!, style: const TextStyle(fontSize: 18))),
+      );
+    }
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -102,11 +125,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
+              constraints: const BoxConstraints(maxWidth: 450),
               child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 8,
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -114,14 +135,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'Registra tus datos',
+                        "Datos del vehículo",
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF0175C2),
                         ),
                       ),
+                      const SizedBox(height: 12),
+
+                      _infoTile("Placa", ticketData?["plate"]),
+                      _infoTile("Modelo", ticketData?["model"]),
+                      _infoTile("Lugar asignado", ticketData?["parkingSpot"]),
+                      _infoTile("Hora de llegada", ticketData?["arrivalTime"]?.toString()),
+
                       const SizedBox(height: 24),
+
+                      const Text(
+                        "Ingresa tus datos",
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
 
                       TextField(
                         controller: _nameController,
@@ -145,54 +179,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 24),
 
                       OutlinedButton.icon(
-                        onPressed: _showPrivacy,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PrivacyScreen(
+                                readOnly: false,
+                                onAccepted: () {
+                                  setState(() => _hasAcceptedPrivacy = true);
+                                  Navigator.pop(context);
+                                },
+                                onDeclined: () {
+                                  setState(() => _hasAcceptedPrivacy = false);
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ),
+                          );
+                        },
                         icon: Icon(
-                          _hasAcceptedPrivacy
-                              ? Icons.check_circle
-                              : Icons.privacy_tip_outlined,
+                          _hasAcceptedPrivacy ? Icons.check_circle : Icons.privacy_tip,
                           color: _hasAcceptedPrivacy ? Colors.green : null,
                         ),
-                        label: Text(
-                          _hasAcceptedPrivacy
-                              ? 'Política aceptada'
-                              : 'Leer Política de Privacidad',
-                        ),
+                        label: Text(_hasAcceptedPrivacy
+                            ? "Política aceptada"
+                            : "Leer Política de Privacidad"),
                       ),
 
                       const SizedBox(height: 16),
 
                       SizedBox(
                         width: double.infinity,
-                        child: _isLoading
+                        child: _isSaving
                             ? const Center(child: CircularProgressIndicator())
                             : ElevatedButton(
-                                onPressed: _saveUser,
+                                onPressed: _saveData,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
                                   backgroundColor: const Color(0xFF0175C2),
                                 ),
-                                child: const Text(
-                                  'Continuar',
-                                  style: TextStyle(fontSize: 18),
-                                ),
+                                child: const Text("Continuar", style: TextStyle(fontSize: 18)),
                               ),
                       ),
-
-                      if (_errorMessage.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12.0),
-                          child: Text(
-                            _errorMessage,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -200,6 +228,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _infoTile(String label, String? value) {
+    if (value == null) return const SizedBox();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value)),
+        ],
       ),
     );
   }
