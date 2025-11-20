@@ -15,26 +15,30 @@ dependencies:
   shared:
     path: ../../shared
 
-  # 🔹 Íconos y UI
+  # 🔹 UI e íconos
   cupertino_icons: ^1.0.8
 
   # 🔹 Firebase
   firebase_core: ^3.15.2
   firebase_auth: ^5.3.1
+  cloud_firestore: ^5.6.0
 
-  # 🔹 Almacenamiento local (offline)
+  # 🔹 Almacenamiento local offline
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+
+  # 🔹 ⚠️ Agregado: almacenamiento persistente simple
+  shared_preferences: ^2.2.2
 
   # 🔹 Detección de conectividad
   connectivity_plus: ^6.0.3
 
-  # 🔹 Soporte PWA (para web)
+  # 🔹 QR y cámara
+  mobile_scanner: ^6.0.1
+
+  # 🔹 Soporte para web/PWA
   flutter_web_plugins:
     sdk: flutter
-
-  mobile_scanner: ^6.0.1
-  cloud_firestore: ^5.6.0
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +47,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
     - shared/documents/privacy_policy.md
-

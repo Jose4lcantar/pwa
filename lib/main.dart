@@ -40,12 +40,29 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
   @override
   void initState() {
     super.initState();
+
     if (kIsWeb) {
       final uri = Uri.base;
-      ticketIdFromUrl = uri.queryParameters['ticketId'];
-      if (ticketIdFromUrl != null) {
-        print("✅ Ticket ID desde URL: $ticketIdFromUrl");
+
+      // 1. Leer parámetros normales (antes del #)
+      String? ticketNormal =
+          uri.queryParameters['ticket'] ?? uri.queryParameters['ticketId'];
+
+      // 2. Leer parámetros después del hash (#/register?ticket=ABC)
+      String? ticketHash;
+      if (uri.fragment.contains('?')) {
+        final hashParams =
+            Uri.splitQueryString(uri.fragment.split('?').last);
+
+        ticketHash = hashParams['ticket'] ?? hashParams['ticketId'];
       }
+
+      // 3. Seleccionar el valor válido
+      ticketIdFromUrl = ticketNormal ?? ticketHash;
+
+      print("DEBUG ticketNormal: $ticketNormal");
+      print("DEBUG ticketHash: $ticketHash");
+      print("✅ FINAL TICKET ID: $ticketIdFromUrl");
     }
   }
 

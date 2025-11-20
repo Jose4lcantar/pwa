@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'privacy_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _loadTicket();
   }
 
-  /// 🟦 Cargar datos existentes desde Firestore
+  /// 🟦 Cargar ticket de Firestore
   Future<void> _loadTicket() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -44,8 +45,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
+      final data = doc.data()!;
+
+      /// 🔒 Si el ticket ya está iniciado, solicitado o entregado → NO permitir registrar de nuevo
+      if (data["status"] == "iniciado" ||
+          data["status"] == "solicitado_cliente" ||
+          data["status"] == "entregado") {
+        Future.delayed(Duration.zero, () {
+          Navigator.pushReplacementNamed(context, "/service_status",
+              arguments: widget.ticketId);
+        });
+        return;
+      }
+
       setState(() {
-        ticketData = doc.data()!;
+        ticketData = data;
         _isLoading = false;
       });
     } catch (e) {
@@ -58,6 +72,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   /// 🟦 Guardar datos del cliente
   Future<void> _saveData() async {
+    if (_isSaving) return; // prevenir doble click
+
     if (!_hasAcceptedPrivacy) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Debes aceptar la Política de Privacidad.")),
@@ -75,6 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isSaving = true);
 
     try {
+      /// Guardar cambios en Firestore
       await FirebaseFirestore.instance
           .collection("qr_codes")
           .doc(widget.ticketId)
@@ -84,8 +101,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "status": "iniciado",
       });
 
+      /// Guardar ticketId localmente para continuar flujo sin QR
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString("current_ticket", widget.ticketId);
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, "/service_status");
+        Navigator.pushReplacementNamed(context, "/service_status",
+            arguments: widget.ticketId);
       }
     } catch (e) {
       setState(() => _isSaving = false);
@@ -95,14 +117,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  /// 🟦 Mostrar pantalla
+  /// 🟦 UI
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -123,14 +143,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 450),
               child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 8,
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -147,13 +168,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _infoTile("Placa", ticketData?["plate"]),
                       _infoTile("Modelo", ticketData?["model"]),
                       _infoTile("Lugar asignado", ticketData?["parkingSpot"]),
-                      _infoTile("Hora de llegada", ticketData?["arrivalTime"]?.toString()),
+                      _infoTile("Hora de llegada",
+                          ticketData?["arrivalTime"]?.toString()),
 
                       const SizedBox(height: 24),
 
                       const Text(
                         "Ingresa tus datos",
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 16),
 
@@ -198,8 +221,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           );
                         },
                         icon: Icon(
-                          _hasAcceptedPrivacy ? Icons.check_circle : Icons.privacy_tip,
-                          color: _hasAcceptedPrivacy ? Colors.green : null,
+                          _hasAcceptedPrivacy
+                              ? Icons.check_circle
+                              : Icons.privacy_tip,
+                          color:
+                              _hasAcceptedPrivacy ? Colors.green : Colors.grey,
                         ),
                         label: Text(_hasAcceptedPrivacy
                             ? "Política aceptada"
@@ -215,10 +241,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             : ElevatedButton(
                                 onPressed: _saveData,
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   backgroundColor: const Color(0xFF0175C2),
                                 ),
-                                child: const Text("Continuar", style: TextStyle(fontSize: 18)),
+                                child: const Text(
+                                  "Continuar",
+                                  style: TextStyle(fontSize: 18),
+                                ),
                               ),
                       ),
                     ],
@@ -238,7 +268,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text("$label: ",
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           Expanded(child: Text(value)),
         ],
       ),
