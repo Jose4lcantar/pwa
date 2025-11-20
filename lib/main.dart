@@ -72,7 +72,7 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
       theme: ThemeData(primarySwatch: Colors.blue),
 
       // ❌ YA NO USAMOS initialRoute
-      // initialRoute: _initialRoute(),
+      initialRoute: '/',
 
       onGenerateRoute: (settings) {
         final box = Hive.box('userData');
@@ -129,8 +129,12 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
       },
 
       routes: {
-        '/settings': (_) => const SettingsScreen(),
-      },
+  '/': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
+  '/home': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
+  '/register': (_) => RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
+  '/service_status': (_) => ServiceStatusScreen(ticketId: ticketIdFromUrl ?? ''),
+  '/settings': (_) => const SettingsScreen(),
+},
     );
   }
 }
