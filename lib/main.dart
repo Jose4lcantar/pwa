@@ -44,11 +44,11 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
     if (kIsWeb) {
       final uri = Uri.base;
 
-      // 1. Leer parámetros normales (antes del #)
+      // 1. Leer parámetros normales (?ticket=)
       String? ticketNormal =
           uri.queryParameters['ticket'] ?? uri.queryParameters['ticketId'];
 
-      // 2. Leer parámetros después del hash (#/register?ticket=ABC)
+      // 2. Leer parámetros después del hash (#/register?ticket=)
       String? ticketHash;
       if (uri.fragment.contains('?')) {
         final hashParams =
@@ -57,19 +57,12 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
         ticketHash = hashParams['ticket'] ?? hashParams['ticketId'];
       }
 
-      // 3. Seleccionar el valor válido
       ticketIdFromUrl = ticketNormal ?? ticketHash;
 
       print("DEBUG ticketNormal: $ticketNormal");
       print("DEBUG ticketHash: $ticketHash");
-      print("✅ FINAL TICKET ID: $ticketIdFromUrl");
+      print("🎯 FINAL TICKET ID: $ticketIdFromUrl");
     }
-  }
-
-  String _initialRoute() {
-    final box = Hive.box('userData');
-    final user = box.get('info');
-    return user == null ? '/register' : '/home';
   }
 
   @override
@@ -77,18 +70,42 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
     return MaterialApp(
       title: 'ValetFlowQR PWA',
       theme: ThemeData(primarySwatch: Colors.blue),
-      initialRoute: _initialRoute(),
+
+      // ❌ YA NO USAMOS initialRoute
+      // initialRoute: _initialRoute(),
 
       onGenerateRoute: (settings) {
+        final box = Hive.box('userData');
+        final user = box.get('info');
+
         final args = settings.arguments as Map<String, dynamic>?;
 
-        // Fallback: ticketId vacío si no viene de argumentos ni URL
         final mergedTicketId = args?['ticketId'] ?? ticketIdFromUrl ?? '';
 
+        print("🎯 Navegando → ${settings.name} con ticket $mergedTicketId");
+
+        // Si NO hay ticket → Mostrar error elegante
+        if (mergedTicketId.isEmpty && settings.name == "/register") {
+          return MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: Center(
+                child: Text(
+                  "No se recibió un ticket válido.\nEscanea nuevamente el QR.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
+            ),
+          );
+        }
+
         switch (settings.name) {
-          case '/home':
+          case '/':
             return MaterialPageRoute(
-              builder: (_) => HomeScreen(ticketId: mergedTicketId),
+              builder: (_) =>
+                  user == null
+                      ? RegisterScreen(ticketId: mergedTicketId)
+                      : HomeScreen(ticketId: mergedTicketId),
             );
 
           case '/register':
@@ -96,21 +113,24 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
               builder: (_) => RegisterScreen(ticketId: mergedTicketId),
             );
 
+          case '/home':
+            return MaterialPageRoute(
+              builder: (_) => HomeScreen(ticketId: mergedTicketId),
+            );
+
           case '/service_status':
             return MaterialPageRoute(
-              builder: (_) => ServiceStatusScreen(ticketId: mergedTicketId),
+              builder: (_) =>
+                  ServiceStatusScreen(ticketId: mergedTicketId),
             );
         }
+
         return null;
       },
 
       routes: {
         '/settings': (_) => const SettingsScreen(),
       },
-
-      onUnknownRoute: (_) => MaterialPageRoute(
-        builder: (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
-      ),
     );
   }
 }

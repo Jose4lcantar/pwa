@@ -48,9 +48,11 @@ class HomeScreen extends StatelessWidget {
           }
 
           final data = snapshot.data!;
+          print("DATA FIRESTORE: ${data.data()}");
+
           final status = data['status'] ?? '';
           final plate = data['plate'] ?? '';
-          final model = data['model'] ?? '';
+          final model = data['carModel'] ?? '';
 
           return _buildHome(context, status, plate, model);
         },
