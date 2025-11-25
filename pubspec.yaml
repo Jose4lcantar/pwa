@@ -13,7 +13,7 @@ dependencies:
 
   # 🔹 Módulo compartido local
   shared:
-    path: ../../shared
+    path: ./shared
 
   # 🔹 UI e íconos
   cupertino_icons: ^1.0.8
