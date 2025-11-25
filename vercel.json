@@ -1,5 +1,0 @@
-{
-  "buildCommand": "./vercel-build.sh",
-  "outputDirectory": "build/web",
-  "framework": "null"
-}
