@@ -60,6 +60,7 @@ class ServiceStatusScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
+                // --- ESTADO 1: Cliente inicia flujo ---
                 if (status == "iniciado")
                   SizedBox(
                     width: double.infinity,
@@ -78,12 +79,26 @@ class ServiceStatusScreen extends StatelessWidget {
                     ),
                   ),
 
+                // --- ESTADO 2: Cliente ya solicitó su auto ---
                 if (status == "solicitado_cliente")
-                  const Text(
-                    "Tu solicitud fue enviada al valet. 🚗💨",
-                    style: TextStyle(fontSize: 16, color: Colors.green),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await ticketRef.update({
+                          'status': 'entregado',
+                          'deliveredAt': DateTime.now(),
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text("Confirmar recibido"),
+                    ),
                   ),
 
+                // --- ESTADO 3: Cliente marca como entregado ---
                 if (status == "entregado")
                   SizedBox(
                     width: double.infinity,
@@ -93,13 +108,25 @@ class ServiceStatusScreen extends StatelessWidget {
                           'status': 'cerrado_cliente',
                           'closedAt': DateTime.now(),
                         });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Servicio finalizado. ¡Gracias!"),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text("Marcar como recibido"),
+                      child: const Text("Cerrar servicio"),
                     ),
+                  ),
+
+                if (status == "cerrado_cliente")
+                  const Text(
+                    "El servicio ha sido cerrado. ¡Gracias por usar el valet! 🚗",
+                    style: TextStyle(fontSize: 16, color: Colors.green),
                   ),
               ],
             ),
