@@ -90,7 +90,7 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
         registerToken(ticketIdFromUrl!);
       }
     } else {
-      // Para móviles o PWA sin URL
+      // Para móviles o PWA sin URL (abrir desde icono)
       ticketIdFromUrl = box.get('ticketId');
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
         registerToken(ticketIdFromUrl!);
