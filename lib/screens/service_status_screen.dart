@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ServiceStatusScreen extends StatelessWidget {
-  final String? ticketId; // ✅ opcional
+  final String? ticketId;
 
   const ServiceStatusScreen({super.key, this.ticketId});
 
@@ -46,9 +46,7 @@ class ServiceStatusScreen extends StatelessWidget {
               children: [
                 Text("Ticket: $ticketId",
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    )),
+                        fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 const Text(
                   "Estado actual:",
@@ -60,67 +58,49 @@ class ServiceStatusScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // --- ESTADO 1: Cliente inicia flujo ---
+                // --- Botones según estado ---
                 if (status == "iniciado")
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await ticketRef.update({
-                          'status': 'solicitado_cliente',
-                          'requestedAt': DateTime.now(),
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text("Solicitar mi vehículo"),
-                    ),
+                  _StatusButton(
+                    label: "Solicitar mi vehículo",
+                    color: Colors.orange,
+                    icon: Icons.local_parking,
+                    onPressed: () async {
+                      await ticketRef.update({
+                        'status': 'solicitado_cliente',
+                        'requestedAt': DateTime.now(),
+                      });
+                    },
                   ),
 
-                // --- ESTADO 2: Cliente ya solicitó su auto ---
                 if (status == "solicitado_cliente")
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await ticketRef.update({
-                          'status': 'entregado',
-                          'deliveredAt': DateTime.now(),
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text("Confirmar recibido"),
-                    ),
+                  _StatusButton(
+                    label: "Confirmar recibido",
+                    color: Colors.green,
+                    icon: Icons.check_circle,
+                    onPressed: () async {
+                      await ticketRef.update({
+                        'status': 'entregado',
+                        'deliveredAt': DateTime.now(),
+                      });
+                    },
                   ),
 
-                // --- ESTADO 3: Cliente marca como entregado ---
                 if (status == "entregado")
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await ticketRef.update({
-                          'status': 'cerrado_cliente',
-                          'closedAt': DateTime.now(),
-                        });
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Servicio finalizado. ¡Gracias!"),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text("Cerrar servicio"),
-                    ),
+                  _StatusButton(
+                    label: "Cerrar servicio",
+                    color: Colors.blue,
+                    icon: Icons.flag,
+                    onPressed: () async {
+                      await ticketRef.update({
+                        'status': 'cerrado_cliente',
+                        'closedAt': DateTime.now(),
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Servicio finalizado. ¡Gracias!"),
+                        ),
+                      );
+                    },
                   ),
 
                 if (status == "cerrado_cliente")
@@ -132,6 +112,46 @@ class ServiceStatusScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// --- Widget Helper para botones ---
+class _StatusButton extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onPressed;
+  final IconData? icon;
+
+  const _StatusButton({
+    required this.label,
+    required this.color,
+    required this.onPressed,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton.icon(
+          icon: icon != null ? Icon(icon, size: 20) : const SizedBox.shrink(),
+          label: Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: onPressed,
+        ),
       ),
     );
   }
