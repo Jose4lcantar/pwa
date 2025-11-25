@@ -8,6 +8,8 @@ environment:
   sdk: ^3.9.0
 
 dependencies:
+  firebase_messaging: 15.2.10
+
   flutter:
     sdk: flutter
 

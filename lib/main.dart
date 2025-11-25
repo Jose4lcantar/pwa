@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 
@@ -20,6 +21,17 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     print('✅ Firebase inicializado correctamente');
+
+    // 🔹 Inicializar FCM y pedir permiso
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    print('Permiso de notificaciones: ${settings.authorizationStatus}');
   } catch (e) {
     print('⚠️ No se pudo inicializar Firebase (modo offline): $e');
   }
@@ -71,7 +83,6 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
       title: 'ValetFlowQR PWA',
       theme: ThemeData(primarySwatch: Colors.blue),
 
-      // ❌ YA NO USAMOS initialRoute
       initialRoute: '/',
 
       onGenerateRoute: (settings) {
@@ -84,7 +95,6 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
 
         print("🎯 Navegando → ${settings.name} con ticket $mergedTicketId");
 
-        // Si NO hay ticket → Mostrar error elegante
         if (mergedTicketId.isEmpty && settings.name == "/register") {
           return MaterialPageRoute(
             builder: (_) => const Scaffold(
@@ -129,12 +139,13 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
       },
 
       routes: {
-  '/': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
-  '/home': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
-  '/register': (_) => RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
-  '/service_status': (_) => ServiceStatusScreen(ticketId: ticketIdFromUrl ?? ''),
-  '/settings': (_) => const SettingsScreen(),
-},
+        '/': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/home': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/register': (_) => RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/service_status': (_) =>
+            ServiceStatusScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/settings': (_) => const SettingsScreen(),
+      },
     );
   }
 }

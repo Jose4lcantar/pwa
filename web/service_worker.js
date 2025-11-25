@@ -1,3 +1,4 @@
+// 🔹 CACHE DE LA PWA
 const CACHE_NAME = 'valetflow-cache-v1';
 const urlsToCache = [
   '/',
@@ -48,4 +49,31 @@ self.addEventListener('fetch', (event) => {
       return response || fetch(event.request);
     })
   );
+});
+
+// 🔹 FIREBASE MESSAGING
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROJECT.firebaseapp.com",
+  projectId: "TU_PROJECT",
+  storageBucket: "TU_PROJECT.appspot.com",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID",
+});
+
+const messaging = firebase.messaging();
+
+// Listener para notificaciones en background
+messaging.onBackgroundMessage(function(payload) {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: '/icons/Icon-192.png'
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
