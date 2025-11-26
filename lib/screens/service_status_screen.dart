@@ -41,7 +41,8 @@ class ServiceStatusScreen extends StatelessWidget {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final status = data['status'] ?? 'creado';
-          final phone = data['phone'] ?? '';
+          // Leer el teléfono siempre como String
+          final phone = (data['clientPhone'] ?? '').toString().trim();
           final storedPin = phone.length >= 4
               ? phone.substring(phone.length - 4)
               : phone;
