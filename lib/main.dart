@@ -4,12 +4,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import 'firebase_options.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/service_status_screen.dart';
 import 'screens/settings_screen.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,11 +21,11 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
     print('✅ Firebase inicializado correctamente');
 
-    // 🔹 Inicializar FCM y pedir permiso
+    // FCM permissions
     FirebaseMessaging messaging = FirebaseMessaging.instance;
-
     NotificationSettings settings = await messaging.requestPermission(
       alert: true,
       badge: true,
@@ -52,32 +52,33 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
   @override
   void initState() {
     super.initState();
+    _loadTicketFromUrlOrHive();
+  }
 
+  Future<void> _loadTicketFromUrlOrHive() async {
     final box = Hive.box('userData');
 
     if (kIsWeb) {
       final uri = Uri.base;
 
-      // 1️⃣ Leer parámetros normales (?ticket=)
-      String? ticketNormal =
+      // Normal query (?ticketId=)
+      final ticketNormal =
           uri.queryParameters['ticket'] ?? uri.queryParameters['ticketId'];
 
-      // 2️⃣ Leer parámetros después del hash (#/register?ticket=)
+      // Hash query (#/register?ticketId=)
       String? ticketHash;
-      if (uri.fragment.contains('?')) {
+      if (uri.fragment.contains("?")) {
         final hashParams =
-            Uri.splitQueryString(uri.fragment.split('?').last);
-
+            Uri.splitQueryString(uri.fragment.split("?").last);
         ticketHash = hashParams['ticket'] ?? hashParams['ticketId'];
       }
 
       ticketIdFromUrl = ticketNormal ?? ticketHash;
 
-      // 🔹 Guardar ticket en Hive para persistencia
+      // Guardar en Hive
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
         box.put('ticketId', ticketIdFromUrl);
       } else {
-        // Si no hay ticket en URL, usar el guardado
         ticketIdFromUrl = box.get('ticketId');
       }
 
@@ -85,13 +86,14 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
       print("DEBUG ticketHash: $ticketHash");
       print("🎯 FINAL TICKET ID: $ticketIdFromUrl");
 
-      // 🔹 Registrar token FCM con ticketId
+      // Registrar token FCM si hay ticket
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
         registerToken(ticketIdFromUrl!);
       }
     } else {
-      // Para móviles o PWA sin URL (abrir desde icono)
+      // Modo app instalada / PWA abierta desde icono
       ticketIdFromUrl = box.get('ticketId');
+
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
         registerToken(ticketIdFromUrl!);
       }
@@ -124,54 +126,22 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
     return MaterialApp(
       title: 'ValetFlowQR PWA',
       theme: ThemeData(primarySwatch: Colors.blue),
-      initialRoute: '/',
 
-      onGenerateRoute: (settings) {
-        final args = settings.arguments as Map<String, dynamic>?;
-        final mergedTicketId = args?['ticketId'] ?? ticketIdFromUrl ?? '';
+      // Inicio correcto
+      home: user == null
+          ? RegisterScreen(ticketId: ticketIdFromUrl ?? '')
+          : HomeScreen(ticketId: ticketIdFromUrl ?? ''),
 
-        print("🎯 Navegando → ${settings.name} con ticket $mergedTicketId");
-
-        if (mergedTicketId.isEmpty && settings.name == "/register") {
-          return MaterialPageRoute(
-            builder: (_) => const Scaffold(
-              body: Center(
-                child: Text(
-                  "No se recibió un ticket válido.\nEscanea nuevamente el QR.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 20),
-                ),
-              ),
-            ),
-          );
-        }
-
-        switch (settings.name) {
-          case '/':
-            return MaterialPageRoute(
-              builder: (_) =>
-                  user == null
-                      ? RegisterScreen(ticketId: mergedTicketId)
-                      : HomeScreen(ticketId: mergedTicketId),
-            );
-          case '/register':
-            return MaterialPageRoute(
-              builder: (_) => RegisterScreen(ticketId: mergedTicketId),
-            );
-          case '/home':
-            return MaterialPageRoute(
-              builder: (_) => HomeScreen(ticketId: mergedTicketId),
-            );
-          case '/service_status':
-            return MaterialPageRoute(
-              builder: (_) => ServiceStatusScreen(ticketId: mergedTicketId),
-            );
-        }
-        return null;
+      // Sistema de rutas limpio (sin duplicados)
+      routes: {
+        '/register': (_) =>
+            RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/home': (_) =>
+            HomeScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/service_status': (_) =>
+            ServiceStatusScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/settings': (_) => const SettingsScreen(),
       },
-
-    
     );
   }
 }
-
