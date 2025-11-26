@@ -31,7 +31,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-web/firebase_options.dart
+web/firebase-messaging-sw.js
 
 
 # Symbolication related

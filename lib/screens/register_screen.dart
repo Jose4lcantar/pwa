@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'privacy_screen.dart';
@@ -47,29 +47,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       final data = doc.data()!;
 
-      /// 🔥 Ajuste de lógica
-      /// Si el registro ya se completó → ir a HOME
-      if (data["status"] == "registro_completado") {
-        Future.delayed(Duration.zero, () {
-          Navigator.pushReplacementNamed(
-            context,
-            "/home",
-            arguments: widget.ticketId,
-          );
+      /// --- 🔥 NUEVA LÓGICA DEL FLUJO ---
+      if (data["status"] == "iniciado") {
+        Future.microtask(() {
+          Navigator.pushReplacementNamed(context, "/home",
+              arguments: widget.ticketId);
         });
         return;
       }
 
-      /// Si el ticket ya está en flujo de servicio → ir a screen de estatus
-      if (data["status"] == "iniciado" ||
-          data["status"] == "solicitado_cliente" ||
-          data["status"] == "entregado") {
-        Future.delayed(Duration.zero, () {
-          Navigator.pushReplacementNamed(
-            context,
-            "/service_status",
-            arguments: widget.ticketId,
-          );
+      if (data["status"] == "solicitado_cliente" ||
+          data["status"] == "entregado" ||
+          data["status"] == "cerrado_cliente") {
+        Future.microtask(() {
+          Navigator.pushReplacementNamed(context, "/service_status",
+              arguments: widget.ticketId);
         });
         return;
       }
@@ -107,27 +99,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isSaving = true);
 
     try {
-      /// Guardar en Firestore
       await FirebaseFirestore.instance
           .collection("qr_codes")
           .doc(widget.ticketId)
           .update({
         "clientName": _nameController.text.trim(),
         "clientPhone": _phoneController.text.trim(),
-        "status": "registro_completado", // 🔥 NUEVO
+        "status": "iniciado",
       });
 
-      /// Guardar en local
       final prefs = await SharedPreferences.getInstance();
       prefs.setString("current_ticket", widget.ticketId);
 
       if (mounted) {
-        /// 🔥 Después del registro → IR A HOME
-        Navigator.pushReplacementNamed(
-          context,
-          "/home",
-          arguments: widget.ticketId,
-        );
+        Navigator.pushReplacementNamed(context, "/home",
+            arguments: widget.ticketId);
       }
     } catch (e) {
       setState(() => _isSaving = false);
@@ -137,7 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  /// UI
+  /// 🟦 UI
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
