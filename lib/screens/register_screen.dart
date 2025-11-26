@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'privacy_screen.dart';
@@ -47,13 +47,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       final data = doc.data()!;
 
-      /// 🔒 Si el ticket ya está iniciado, solicitado o entregado → NO permitir registrar de nuevo
+      /// 🔥 Ajuste de lógica
+      /// Si el registro ya se completó → ir a HOME
+      if (data["status"] == "registro_completado") {
+        Future.delayed(Duration.zero, () {
+          Navigator.pushReplacementNamed(
+            context,
+            "/home",
+            arguments: widget.ticketId,
+          );
+        });
+        return;
+      }
+
+      /// Si el ticket ya está en flujo de servicio → ir a screen de estatus
       if (data["status"] == "iniciado" ||
           data["status"] == "solicitado_cliente" ||
           data["status"] == "entregado") {
         Future.delayed(Duration.zero, () {
-          Navigator.pushReplacementNamed(context, "/service_status",
-              arguments: widget.ticketId);
+          Navigator.pushReplacementNamed(
+            context,
+            "/service_status",
+            arguments: widget.ticketId,
+          );
         });
         return;
       }
@@ -72,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   /// 🟦 Guardar datos del cliente
   Future<void> _saveData() async {
-    if (_isSaving) return; // prevenir doble click
+    if (_isSaving) return;
 
     if (!_hasAcceptedPrivacy) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -91,23 +107,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isSaving = true);
 
     try {
-      /// Guardar cambios en Firestore
+      /// Guardar en Firestore
       await FirebaseFirestore.instance
           .collection("qr_codes")
           .doc(widget.ticketId)
           .update({
         "clientName": _nameController.text.trim(),
         "clientPhone": _phoneController.text.trim(),
-        "status": "iniciado",
+        "status": "registro_completado", // 🔥 NUEVO
       });
 
-      /// Guardar ticketId localmente para continuar flujo sin QR
+      /// Guardar en local
       final prefs = await SharedPreferences.getInstance();
       prefs.setString("current_ticket", widget.ticketId);
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, "/service_status",
-            arguments: widget.ticketId);
+        /// 🔥 Después del registro → IR A HOME
+        Navigator.pushReplacementNamed(
+          context,
+          "/home",
+          arguments: widget.ticketId,
+        );
       }
     } catch (e) {
       setState(() => _isSaving = false);
@@ -117,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  /// 🟦 UI
+  /// UI
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
