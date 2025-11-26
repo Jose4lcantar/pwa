@@ -5,11 +5,11 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
-
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/service_status_screen.dart';
 import 'screens/settings_screen.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -170,14 +170,8 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
         return null;
       },
 
-      routes: {
-        '/': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
-        '/home': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
-        '/register': (_) => RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
-        '/service_status': (_) =>
-            ServiceStatusScreen(ticketId: ticketIdFromUrl ?? ''),
-        '/settings': (_) => const SettingsScreen(),
-      },
+    
     );
   }
 }
+
