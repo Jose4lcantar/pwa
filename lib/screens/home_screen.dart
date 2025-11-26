@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'privacy_screen.dart';
+import 'history_screen.dart'; // <-- IMPORT NECESARIO
 
 class HomeScreen extends StatelessWidget {
-  final String? ticketId; // ✅ Cambiado a opcional
+  final String? ticketId;
 
   const HomeScreen({
     super.key,
@@ -214,12 +215,25 @@ class HomeScreen extends StatelessWidget {
           Icons.info,
           '/service_status',
         ),
+
+        // 🔥 HISTORIAL — CON NAVEGACIÓN PROPIA
         _menuCard(
           context,
           'Historial',
           Icons.history,
-          '/history',
+          '',
+          onTap: () {
+            if (ticketId == null) return;
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => HistoryScreen(ticketId: ticketId!),
+              ),
+            );
+          },
         ),
+
         _menuCard(
           context,
           'Configuración',

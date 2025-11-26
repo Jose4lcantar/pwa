@@ -38,7 +38,7 @@ class ServiceStatusScreen extends StatelessWidget {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final status = data['status'] ?? 'creado';
-          final pin = data['pin'];
+          final pin = data['pin']; // <- PIN desde el registro
 
           return Padding(
             padding: const EdgeInsets.all(20),
@@ -61,22 +61,21 @@ class ServiceStatusScreen extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                // 🔵 WIZARD DE PROGRESO
-                _buildProgressWizard(status),
+                /// 🌟 Nuevo Wizard elegante
+                _buildBeautifulWizard(status),
                 const SizedBox(height: 40),
 
-                // -----------------------------------------
-                //           BOTONES CON PIN
-                // -----------------------------------------
+                //-----------------------------------------
+                // BOTONES CON VALIDACIÓN POR PIN
+                //-----------------------------------------
                 if (status == "iniciado")
                   _StatusButton(
                     label: "Solicitar mi vehículo",
                     color: Colors.orange,
                     icon: Icons.local_parking,
                     onPressed: () async {
-                      final success =
-                          await _validatePin(context, ticketRef, pin);
-                      if (!success) return;
+                      final ok = await _validatePin(context, pin);
+                      if (!ok) return;
 
                       await ticketRef.update({
                         'status': 'solicitado_cliente',
@@ -91,9 +90,8 @@ class ServiceStatusScreen extends StatelessWidget {
                     color: Colors.green,
                     icon: Icons.check_circle,
                     onPressed: () async {
-                      final success =
-                          await _validatePin(context, ticketRef, pin);
-                      if (!success) return;
+                      final ok = await _validatePin(context, pin);
+                      if (!ok) return;
 
                       await ticketRef.update({
                         'status': 'entregado',
@@ -108,9 +106,8 @@ class ServiceStatusScreen extends StatelessWidget {
                     color: Colors.blue,
                     icon: Icons.flag,
                     onPressed: () async {
-                      final success =
-                          await _validatePin(context, ticketRef, pin);
-                      if (!success) return;
+                      final ok = await _validatePin(context, pin);
+                      if (!ok) return;
 
                       await ticketRef.update({
                         'status': 'cerrado_cliente',
@@ -139,10 +136,16 @@ class ServiceStatusScreen extends StatelessWidget {
   }
 
   // -------------------------------------------------------------------------
-  //                     WIZARD DE PROGRESO (NUEVO)
+  //                 WIZARD BONITO / LÍNEA DE TIEMPO MEJORADA
   // -------------------------------------------------------------------------
-  Widget _buildProgressWizard(String status) {
-    final steps = ["creado", "iniciado", "solicitado_cliente", "entregado", "cerrado_cliente"];
+  Widget _buildBeautifulWizard(String status) {
+    final steps = [
+      "creado",
+      "iniciado",
+      "solicitado_cliente",
+      "entregado",
+      "cerrado_cliente"
+    ];
 
     int current = steps.indexOf(status);
     if (current < 0) current = 0;
@@ -151,31 +154,65 @@ class ServiceStatusScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: List.generate(steps.length, (i) {
         final active = i <= current;
+        final isLast = i == steps.length - 1;
 
         return Column(
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: active ? Colors.green : Colors.grey.shade300,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                active ? Icons.check : Icons.circle,
-                color: active ? Colors.white : Colors.grey,
-                size: active ? 22 : 14,
-              ),
+            Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    gradient: active
+                        ? const LinearGradient(
+                            colors: [Colors.green, Colors.lightGreen],
+                          )
+                        : LinearGradient(
+                            colors: [Colors.grey.shade300, Colors.grey.shade200],
+                          ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      if (active)
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        )
+                    ],
+                  ),
+                  child: Icon(
+                    active ? Icons.check : Icons.circle,
+                    color: active ? Colors.white : Colors.grey,
+                    size: active ? 20 : 14,
+                  ),
+                ),
+
+                // ---------- CONECTOR ENTRE CÍRCULOS ----------
+                if (!isLast)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: 45,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: i < current ? Colors.green : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 6),
-            Text(
-              steps[i].replaceAll("_", "\n"),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: active ? Colors.green : Colors.grey,
+            SizedBox(
+              width: 70,
+              child: Text(
+                steps[i].replaceAll("_", "\n"),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: active ? Colors.green : Colors.grey,
+                ),
               ),
             )
           ],
@@ -187,8 +224,7 @@ class ServiceStatusScreen extends StatelessWidget {
   // -------------------------------------------------------------------------
   //                      VALIDACIÓN DE PIN
   // -------------------------------------------------------------------------
-  Future<bool> _validatePin(
-      BuildContext context, DocumentReference ref, String? storedPin) async {
+  Future<bool> _validatePin(BuildContext context, String? storedPin) async {
     final controller = TextEditingController();
 
     return await showDialog<bool>(
@@ -199,8 +235,10 @@ class ServiceStatusScreen extends StatelessWidget {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text("Ingresa tu PIN de 4 dígitos"),
-                const SizedBox(height: 12),
+                const Text(
+                  "Tu PIN son los últimos 4 dígitos del teléfono que registraste.",
+                ),
+                const SizedBox(height: 14),
                 TextField(
                   controller: controller,
                   keyboardType: TextInputType.number,
@@ -223,26 +261,14 @@ class ServiceStatusScreen extends StatelessWidget {
                 child: const Text("Cancelar"),
               ),
               ElevatedButton(
-                onPressed: () async {
+                onPressed: () {
                   final enteredPin = controller.text.trim();
-
-                  if (enteredPin.length != 4) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("El PIN debe ser de 4 dígitos")),
-                    );
-                    return;
-                  }
-
-                  if (storedPin == null) {
-                    await ref.update({'pin': enteredPin});
-                    Navigator.pop(context, true);
-                    return;
-                  }
 
                   if (enteredPin != storedPin) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("PIN incorrecto")),
+                      const SnackBar(
+                        content: Text("PIN incorrecto"),
+                      ),
                     );
                     return;
                   }
