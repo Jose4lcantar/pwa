@@ -37,8 +37,8 @@ class ServiceStatusScreen extends StatelessWidget {
           }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
-          final status = data['status'] ?? 'desconocido';
-          final pin = data['pin']; // El PIN se guarda en Firestore
+          final status = data['status'] ?? 'creado';
+          final pin = data['pin'];
 
           return Padding(
             padding: const EdgeInsets.all(20),
@@ -49,23 +49,33 @@ class ServiceStatusScreen extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
-                const Text("Estado actual:",
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+
+                const Text(
+                  "Estado actual:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 Text(
                   _statusLabel(status),
                   style: const TextStyle(fontSize: 22, color: Colors.blue),
                 ),
+
                 const SizedBox(height: 30),
 
-                /// --- BOTONES CON PIN ---
+                // 🔵 WIZARD DE PROGRESO
+                _buildProgressWizard(status),
+                const SizedBox(height: 40),
+
+                // -----------------------------------------
+                //           BOTONES CON PIN
+                // -----------------------------------------
                 if (status == "iniciado")
                   _StatusButton(
                     label: "Solicitar mi vehículo",
                     color: Colors.orange,
                     icon: Icons.local_parking,
                     onPressed: () async {
-                      final success = await _validatePin(context, ticketRef, pin);
+                      final success =
+                          await _validatePin(context, ticketRef, pin);
                       if (!success) return;
 
                       await ticketRef.update({
@@ -81,7 +91,8 @@ class ServiceStatusScreen extends StatelessWidget {
                     color: Colors.green,
                     icon: Icons.check_circle,
                     onPressed: () async {
-                      final success = await _validatePin(context, ticketRef, pin);
+                      final success =
+                          await _validatePin(context, ticketRef, pin);
                       if (!success) return;
 
                       await ticketRef.update({
@@ -97,7 +108,8 @@ class ServiceStatusScreen extends StatelessWidget {
                     color: Colors.blue,
                     icon: Icons.flag,
                     onPressed: () async {
-                      final success = await _validatePin(context, ticketRef, pin);
+                      final success =
+                          await _validatePin(context, ticketRef, pin);
                       if (!success) return;
 
                       await ticketRef.update({
@@ -126,9 +138,55 @@ class ServiceStatusScreen extends StatelessWidget {
     );
   }
 
-  // -----------------------------------------------------
-  // BEAUTIFUL PIN VALIDATION
-  // -----------------------------------------------------
+  // -------------------------------------------------------------------------
+  //                     WIZARD DE PROGRESO (NUEVO)
+  // -------------------------------------------------------------------------
+  Widget _buildProgressWizard(String status) {
+    final steps = ["creado", "iniciado", "solicitado_cliente", "entregado", "cerrado_cliente"];
+
+    int current = steps.indexOf(status);
+    if (current < 0) current = 0;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(steps.length, (i) {
+        final active = i <= current;
+
+        return Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: active ? Colors.green : Colors.grey.shade300,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                active ? Icons.check : Icons.circle,
+                color: active ? Colors.white : Colors.grey,
+                size: active ? 22 : 14,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              steps[i].replaceAll("_", "\n"),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: active ? Colors.green : Colors.grey,
+              ),
+            )
+          ],
+        );
+      }),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  //                      VALIDACIÓN DE PIN
+  // -------------------------------------------------------------------------
   Future<bool> _validatePin(
       BuildContext context, DocumentReference ref, String? storedPin) async {
     final controller = TextEditingController();
@@ -176,14 +234,12 @@ class ServiceStatusScreen extends StatelessWidget {
                     return;
                   }
 
-                  // Si el ticket NO tiene PIN → se guarda el primero
                   if (storedPin == null) {
                     await ref.update({'pin': enteredPin});
                     Navigator.pop(context, true);
                     return;
                   }
 
-                  // Si el PIN no coincide → error
                   if (enteredPin != storedPin) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("PIN incorrecto")),
@@ -203,6 +259,8 @@ class ServiceStatusScreen extends StatelessWidget {
 
   String _statusLabel(String status) {
     switch (status) {
+      case "creado":
+        return "Ticket creado";
       case "iniciado":
         return "Registro completado";
       case "solicitado_cliente":
@@ -217,7 +275,9 @@ class ServiceStatusScreen extends StatelessWidget {
   }
 }
 
-// --- Botón bonito reutilizable ---
+// ---------------------------------------------------------------------------
+//                             BOTÓN REUTILIZABLE
+// ---------------------------------------------------------------------------
 class _StatusButton extends StatelessWidget {
   final String label;
   final Color color;
