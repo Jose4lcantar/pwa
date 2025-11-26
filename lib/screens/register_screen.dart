@@ -47,29 +47,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       final data = doc.data()!;
 
-      /// --- 🔥 NUEVA LÓGICA DEL FLUJO ---
-      if (data["status"] == "iniciado") {
+      /// 🔥 NUEVA LÓGICA → ignorar status, basarse en clientName
+      final clientName = data["clientName"]?.toString().trim();
+
+      if (clientName != null && clientName.isNotEmpty) {
+        /// Cliente YA está registrado → ir a estado del servicio
         Future.microtask(() {
-          Navigator.pushReplacementNamed(context, "/home",
-              arguments: widget.ticketId);
+          Navigator.pushReplacementNamed(
+            context,
+            "/service_status",
+            arguments: widget.ticketId,
+          );
         });
         return;
       }
 
-      if (data["status"] == "solicitado_cliente" ||
-          data["status"] == "entregado" ||
-          data["status"] == "cerrado_cliente") {
-        Future.microtask(() {
-          Navigator.pushReplacementNamed(context, "/service_status",
-              arguments: widget.ticketId);
-        });
-        return;
-      }
-
+      /// Cliente NO está registrado → mostrar formulario
       setState(() {
         ticketData = data;
         _isLoading = false;
       });
+
     } catch (e) {
       setState(() {
         error = "Error al cargar datos.";
@@ -105,16 +103,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           .update({
         "clientName": _nameController.text.trim(),
         "clientPhone": _phoneController.text.trim(),
-        "status": "iniciado",
+        "status": "iniciado", // No se rompe el flujo del valet
       });
 
       final prefs = await SharedPreferences.getInstance();
       prefs.setString("current_ticket", widget.ticketId);
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, "/home",
-            arguments: widget.ticketId);
+        Navigator.pushReplacementNamed(
+          context,
+          "/home", // como lo pediste
+          arguments: widget.ticketId,
+        );
       }
+
     } catch (e) {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
