@@ -41,10 +41,10 @@ class ServiceStatusScreen extends StatelessWidget {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final status = data['status'] ?? 'creado';
-          final phone = data['phone'] ?? ''; // <-- teléfono registrado
+          final phone = data['phone'] ?? '';
           final storedPin = phone.length >= 4
               ? phone.substring(phone.length - 4)
-              : phone; // últimos 4 dígitos
+              : phone;
 
           return Padding(
             padding: const EdgeInsets.all(20),
@@ -64,7 +64,6 @@ class ServiceStatusScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 22, color: Colors.blue),
                 ),
                 const SizedBox(height: 30),
-                /// Wizard elegante
                 _buildBeautifulWizard(status),
                 const SizedBox(height: 40),
 
@@ -80,10 +79,7 @@ class ServiceStatusScreen extends StatelessWidget {
                       final ok = await _validatePin(context, storedPin);
                       if (!ok) return;
 
-                      await ticketRef.update({
-                        'status': 'solicitado_cliente',
-                        'requestedAt': DateTime.now(),
-                      });
+                      await _updateStatus(ticketRef, 'solicitado_cliente');
                     },
                   ),
                 if (status == "solicitado_cliente")
@@ -95,10 +91,7 @@ class ServiceStatusScreen extends StatelessWidget {
                       final ok = await _validatePin(context, storedPin);
                       if (!ok) return;
 
-                      await ticketRef.update({
-                        'status': 'entregado',
-                        'deliveredAt': DateTime.now(),
-                      });
+                      await _updateStatus(ticketRef, 'entregado');
                     },
                   ),
                 if (status == "entregado")
@@ -110,10 +103,7 @@ class ServiceStatusScreen extends StatelessWidget {
                       final ok = await _validatePin(context, storedPin);
                       if (!ok) return;
 
-                      await ticketRef.update({
-                        'status': 'cerrado_cliente',
-                        'closedAt': DateTime.now(),
-                      });
+                      await _updateStatus(ticketRef, 'cerrado_cliente');
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -151,6 +141,24 @@ class ServiceStatusScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  /// -------------------------------------------------------------------------
+  /// FUNCIÓN PARA ACTUALIZAR ESTADO + HISTORIAL
+  /// -------------------------------------------------------------------------
+  Future<void> _updateStatus(DocumentReference ticketRef, String newStatus) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    await ticketRef.update({
+      'status': newStatus,
+      'history': FieldValue.arrayUnion([
+        {'status': newStatus, 'timestamp': timestamp}
+      ]),
+      // opcional: campos individuales por estado
+      if (newStatus == 'solicitado_cliente') 'requestedAt': DateTime.now(),
+      if (newStatus == 'entregado') 'deliveredAt': DateTime.now(),
+      if (newStatus == 'cerrado_cliente') 'closedAt': DateTime.now(),
+    });
   }
 
   // -------------------------------------------------------------------------
