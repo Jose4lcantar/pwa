@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'firebase_options.dart';
-import 'screens/chatbot_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/service_status_screen.dart';
@@ -25,33 +24,21 @@ Future<void> main() async {
 
     print('✅ Firebase inicializado correctamente');
 
-    // FCM permissions
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    NotificationSettings settings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    print('Permiso de notificaciones: ${settings.authorizationStatus}');
-
-    // Registrar Service Worker solo en web
     if (kIsWeb) {
-      // Flutter Web requiere registrar el SW manualmente
-      try {
-        await FirebaseMessaging.instance
-            .setForegroundNotificationPresentationOptions(
-              alert: true,
-              badge: true,
-              sound: true,
-            );
+      final messaging = FirebaseMessaging.instance;
 
-        print('🎯 Service Worker registrado correctamente para FCM');
-      } catch (e) {
-        print('⚠️ Error registrando Service Worker: $e');
-      }
+      // Permisos
+      await messaging.requestPermission();
+
+      // Token Web con VAPID
+      final token = await messaging.getToken(
+        vapidKey: "TU_VAPID_KEY",
+      );
+
+      print("🎯 Token Web: $token");
     }
   } catch (e) {
-    print('⚠️ No se pudo inicializar Firebase (modo offline): $e');
+    print('⚠️ Error inicializando Firebase: $e');
   }
 
   runApp(const ValetFlowQRApp());
@@ -79,11 +66,9 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
     if (kIsWeb) {
       final uri = Uri.base;
 
-      // Normal query (?ticketId=)
       final ticketNormal =
           uri.queryParameters['ticket'] ?? uri.queryParameters['ticketId'];
 
-      // Hash query (#/register?ticketId=)
       String? ticketHash;
       if (uri.fragment.contains("?")) {
         final hashParams =
@@ -93,26 +78,20 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
 
       ticketIdFromUrl = ticketNormal ?? ticketHash;
 
-      // Guardar en Hive
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
         box.put('ticketId', ticketIdFromUrl);
       } else {
         ticketIdFromUrl = box.get('ticketId');
       }
 
-      print("DEBUG ticketNormal: $ticketNormal");
-      print("DEBUG ticketHash: $ticketHash");
-      print("🎯 FINAL TICKET ID: $ticketIdFromUrl");
+      print("🎯 TICKET FINAL: $ticketIdFromUrl");
 
-      // Registrar token FCM si hay ticket
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
         await registerToken(ticketIdFromUrl!);
       }
     } else {
-      // Modo app instalada / PWA abierta desde icono
       ticketIdFromUrl = box.get('ticketId');
-
-      if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
+      if (ticketIdFromUrl != null) {
         await registerToken(ticketIdFromUrl!);
       }
     }
@@ -120,8 +99,7 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
 
   Future<void> registerToken(String ticketId) async {
     try {
-      final messaging = FirebaseMessaging.instance;
-      final token = await messaging.getToken();
+      final token = await FirebaseMessaging.instance.getToken();
 
       if (token != null) {
         await FirebaseFirestore.instance
@@ -129,10 +107,10 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
             .doc(ticketId)
             .update({'fcmToken': token});
 
-        print('✅ Token FCM registrado para ticket $ticketId');
+        print('✅ Token FCM guardado para ticket $ticketId');
       }
     } catch (e) {
-      print('⚠️ Error registrando token FCM: $e');
+      print('⚠️ Error registrando token: $e');
     }
   }
 
@@ -144,13 +122,9 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
     return MaterialApp(
       title: 'ValetFlowQR PWA',
       theme: ThemeData(primarySwatch: Colors.blue),
-
-      // Inicio correcto
       home: user == null
           ? RegisterScreen(ticketId: ticketIdFromUrl ?? '')
           : HomeScreen(ticketId: ticketIdFromUrl ?? ''),
-
-      // Sistema de rutas limpio (sin duplicados)
       routes: {
         '/register': (_) =>
             RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
