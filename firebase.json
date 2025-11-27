@@ -1,1 +1,42 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"valetflowqr-40544","appId":"1:835667889247:android:0e52413c71639ccbea9fea","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"valetflowqr-40544","configurations":{"android":"1:835667889247:android:0e52413c71639ccbea9fea","ios":"1:835667889247:ios:43a058e6c0949ed0ea9fea","macos":"1:835667889247:ios:43a058e6c0949ed0ea9fea","web":"1:835667889247:web:6d86da70f314e33dea9fea","windows":"1:835667889247:web:01917e0e11c749abea9fea"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "valetflowqr-40544",
+          "appId": "1:835667889247:android:0e52413c71639ccbea9fea",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "valetflowqr-40544",
+          "configurations": {
+            "android": "1:835667889247:android:0e52413c71639ccbea9fea",
+            "ios": "1:835667889247:ios:43a058e6c0949ed0ea9fea",
+            "macos": "1:835667889247:ios:43a058e6c0949ed0ea9fea",
+            "web": "1:835667889247:web:6d86da70f314e33dea9fea",
+            "windows": "1:835667889247:web:01917e0e11c749abea9fea"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
+}

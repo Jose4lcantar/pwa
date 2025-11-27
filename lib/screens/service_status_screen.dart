@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// --------------------------------------------------------------
 /// PANTALLA PRINCIPAL: ServiceStatusScreen
@@ -41,11 +42,16 @@ class ServiceStatusScreen extends StatelessWidget {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final status = data['status'] ?? 'creado';
+
           // Leer el teléfono siempre como String
           final phone = (data['clientPhone'] ?? '').toString().trim();
-          final storedPin = phone.length >= 4
-              ? phone.substring(phone.length - 4)
-              : phone;
+          final storedPin =
+              phone.length >= 4 ? phone.substring(phone.length - 4) : phone;
+
+          // -------------------------------------------------------------
+          // 🔥 GUARDAR TOKEN FCM UNA VEZ POR SESIÓN
+          // -------------------------------------------------------------
+          _saveFcmToken(ticketId!);
 
           return Padding(
             padding: const EdgeInsets.all(20),
@@ -145,6 +151,28 @@ class ServiceStatusScreen extends StatelessWidget {
   }
 
   /// -------------------------------------------------------------------------
+  /// 🔥 FUNCIÓN PARA GUARDAR EL TOKEN FCM EN FIRESTORE
+  /// -------------------------------------------------------------------------
+  Future<void> _saveFcmToken(String ticketId) async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+
+      if (token != null) {
+        await FirebaseFirestore.instance
+            .collection('qr_codes')
+            .doc(ticketId)
+            .update({'fcmToken': token});
+
+        print("🔥 TOKEN GUARDADO EN FIRESTORE: $token");
+      } else {
+        print("❌ No se pudo obtener el token FCM");
+      }
+    } catch (e) {
+      print("ERROR guardando FCM token: $e");
+    }
+  }
+
+  /// -------------------------------------------------------------------------
   /// FUNCIÓN PARA ACTUALIZAR ESTADO + HISTORIAL
   /// -------------------------------------------------------------------------
   Future<void> _updateStatus(DocumentReference ticketRef, String newStatus) async {
@@ -155,7 +183,6 @@ class ServiceStatusScreen extends StatelessWidget {
       'history': FieldValue.arrayUnion([
         {'status': newStatus, 'timestamp': timestamp}
       ]),
-      // opcional: campos individuales por estado
       if (newStatus == 'solicitado_cliente') 'requestedAt': DateTime.now(),
       if (newStatus == 'entregado') 'deliveredAt': DateTime.now(),
       if (newStatus == 'cerrado_cliente') 'closedAt': DateTime.now(),
@@ -196,13 +223,13 @@ class ServiceStatusScreen extends StatelessWidget {
                         ? const LinearGradient(
                             colors: [Colors.green, Colors.lightGreen],
                           )
-                        : LinearGradient(
+                        : const LinearGradient(
                             colors: [Colors.grey, Colors.grey]),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     active ? Icons.check : Icons.circle,
-                    color: active ? Colors.white : Colors.grey.shade700,
+                    color: active ? Colors.white : Colors.grey,
                   ),
                 ),
                 if (!isLast)

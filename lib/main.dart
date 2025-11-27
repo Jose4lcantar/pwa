@@ -33,6 +33,23 @@ Future<void> main() async {
       sound: true,
     );
     print('Permiso de notificaciones: ${settings.authorizationStatus}');
+
+    // Registrar Service Worker solo en web
+    if (kIsWeb) {
+      // Flutter Web requiere registrar el SW manualmente
+      try {
+        await FirebaseMessaging.instance
+            .setForegroundNotificationPresentationOptions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
+
+        print('🎯 Service Worker registrado correctamente para FCM');
+      } catch (e) {
+        print('⚠️ Error registrando Service Worker: $e');
+      }
+    }
   } catch (e) {
     print('⚠️ No se pudo inicializar Firebase (modo offline): $e');
   }
@@ -89,14 +106,14 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
 
       // Registrar token FCM si hay ticket
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
-        registerToken(ticketIdFromUrl!);
+        await registerToken(ticketIdFromUrl!);
       }
     } else {
       // Modo app instalada / PWA abierta desde icono
       ticketIdFromUrl = box.get('ticketId');
 
       if (ticketIdFromUrl != null && ticketIdFromUrl!.isNotEmpty) {
-        registerToken(ticketIdFromUrl!);
+        await registerToken(ticketIdFromUrl!);
       }
     }
   }

@@ -201,7 +201,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextField(
                         controller: _phoneController,
                         decoration: const InputDecoration(
-                          labelText: 'Teléfono (opcional)',
+                          labelText: 'Teléfono',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.phone),
                         ),
