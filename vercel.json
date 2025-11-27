@@ -1,4 +1,7 @@
 {
   "buildCommand": "sh ./vercel-build.sh",
-  "outputDirectory": "build/web"
+  "outputDirectory": "build/web",
+  "rewrites": [
+    { "source": "/firebase-messaging-sw.js", "destination": "/firebase-messaging-sw.js" }
+  ]
 }
