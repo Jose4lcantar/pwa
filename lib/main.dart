@@ -27,15 +27,38 @@ Future<void> main() async {
     if (kIsWeb) {
       final messaging = FirebaseMessaging.instance;
 
-      // Permisos
-      await messaging.requestPermission();
-
-      // Token Web con VAPID
-      final token = await messaging.getToken(
-        vapidKey: "TU_VAPID_KEY",
+      // Pedir permisos de notificación
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
       );
 
-      print("🎯 Token Web: $token");
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Generar token FCM Web con VAPID Key
+        final token = await messaging.getToken(
+          vapidKey: "BObcTSbD5V3yjUPVzOmydB_0phZbQLakieo2d_yj5AHrWdh2y78c_4f4FqhJF167kHfhAunwc2FbfSusxUxMUa0", // ⚡ Reemplaza con tu VAPID Key
+        );
+
+        if (token != null) {
+          print("🎯 Token Web: $token");
+
+          // Guardar token en Firestore para el ticket si ya existe
+          final box = Hive.box('userData');
+          final ticketId = box.get('ticketId');
+          if (ticketId != null && ticketId.isNotEmpty) {
+            await FirebaseFirestore.instance
+                .collection('qr_codes')
+                .doc(ticketId)
+                .update({'fcmToken': token});
+            print('✅ Token FCM guardado para ticket $ticketId');
+          }
+        } else {
+          print("⚠️ No se pudo generar token FCM Web");
+        }
+      } else {
+        print("⚠️ Permiso de notificaciones denegado");
+      }
     }
   } catch (e) {
     print('⚠️ Error inicializando Firebase: $e');
