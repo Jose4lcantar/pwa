@@ -68,7 +68,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ticketData = data;
         _isLoading = false;
       });
-
     } catch (e) {
       setState(() {
         error = "Error al cargar datos.";
@@ -112,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "clientName": _nameController.text.trim(),
         "clientPhone": _phoneController.text.trim(),
         "clientEmail": _emailController.text.trim(), // Nuevo
-        "status": "iniciado", // No se rompe el flujo del valet
+        "status": "iniciado",
       });
 
       final prefs = await SharedPreferences.getInstance();
@@ -125,7 +124,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           arguments: widget.ticketId,
         );
       }
-
     } catch (e) {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -182,11 +180,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 12),
 
+                      // Solo mostrar placa y modelo
                       _infoTile("Placa", ticketData?["plate"]),
                       _infoTile("Modelo", ticketData?["model"]),
-                      _infoTile("Lugar asignado", ticketData?["parkingSpot"]),
-                      _infoTile("Hora de llegada",
-                          ticketData?["arrivalTime"]?.toString()),
 
                       const SizedBox(height: 24),
 
@@ -208,7 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
 
                       TextField(
-                        controller: _emailController, // Nuevo
+                        controller: _emailController,
                         decoration: const InputDecoration(
                           labelText: 'Correo electrónico',
                           border: OutlineInputBorder(),
