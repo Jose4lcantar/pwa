@@ -24,41 +24,42 @@ Future<void> main() async {
 
     print('✅ Firebase inicializado correctamente');
 
-    if (kIsWeb) {
-      final messaging = FirebaseMessaging.instance;
+    final messaging = FirebaseMessaging.instance;
 
-      // Pedir permisos de notificación
-      NotificationSettings settings = await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
+    // Pedir permisos de notificación
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      // Generar token FCM
+      final token = await messaging.getToken(
+        vapidKey: kIsWeb
+            ? "BObcTSbD5V3yjUPVzOmydB_0phZbQLakieo2d_yj5AHrWdh2y78c_4f4FqhJF167kHfhAunwc2FbfSusxUxMUa0"
+            : null,
       );
 
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        // Generar token FCM Web con VAPID Key
-        final token = await messaging.getToken(
-          vapidKey: "BObcTSbD5V3yjUPVzOmydB_0phZbQLakieo2d_yj5AHrWdh2y78c_4f4FqhJF167kHfhAunwc2FbfSusxUxMUa0", // ⚡ Reemplaza con tu VAPID Key
-        );
+      if (token != null) {
+        print("🎯 Token FCM: $token");
 
-        if (token != null) {
-          print("🎯 Token Web: $token");
+        // Guardar token en Firestore en colección general
+        await FirebaseFirestore.instance
+            .collection('user_tokens')
+            .doc(token)
+            .set({
+          'token': token,
+          'platform': kIsWeb ? 'web' : 'mobile',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
 
-          // Guardar token en Firestore para el ticket si ya existe
-          final box = Hive.box('userData');
-          final ticketId = box.get('ticketId');
-          if (ticketId != null && ticketId.isNotEmpty) {
-            await FirebaseFirestore.instance
-                .collection('qr_codes')
-                .doc(ticketId)
-                .update({'fcmToken': token});
-            print('✅ Token FCM guardado para ticket $ticketId');
-          }
-        } else {
-          print("⚠️ No se pudo generar token FCM Web");
-        }
+        print('✅ Token FCM guardado en user_tokens');
       } else {
-        print("⚠️ Permiso de notificaciones denegado");
+        print("⚠️ No se pudo generar token FCM");
       }
+    } else {
+      print("⚠️ Permiso de notificaciones denegado");
     }
   } catch (e) {
     print('⚠️ Error inicializando Firebase: $e');
@@ -149,10 +150,8 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
           ? RegisterScreen(ticketId: ticketIdFromUrl ?? '')
           : HomeScreen(ticketId: ticketIdFromUrl ?? ''),
       routes: {
-        '/register': (_) =>
-            RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
-        '/home': (_) =>
-            HomeScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/register': (_) => RegisterScreen(ticketId: ticketIdFromUrl ?? ''),
+        '/home': (_) => HomeScreen(ticketId: ticketIdFromUrl ?? ''),
         '/service_status': (_) =>
             ServiceStatusScreen(ticketId: ticketIdFromUrl ?? ''),
         '/settings': (_) => const SettingsScreen(),
