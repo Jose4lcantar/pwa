@@ -34,7 +34,6 @@ Future<void> main() async {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      // Generar token FCM
       final token = await messaging.getToken(
         vapidKey: kIsWeb
             ? "BObcTSbD5V3yjUPVzOmydB_0phZbQLakieo2d_yj5AHrWdh2y78c_4f4FqhJF167kHfhAunwc2FbfSusxUxMUa0"
@@ -44,7 +43,7 @@ Future<void> main() async {
       if (token != null) {
         print("🎯 Token FCM: $token");
 
-        // Guardar token en Firestore en colección general
+        // Guardar token en Firestore para plataforma general
         await FirebaseFirestore.instance
             .collection('user_tokens')
             .doc(token)
@@ -55,6 +54,17 @@ Future<void> main() async {
         });
 
         print('✅ Token FCM guardado en user_tokens');
+
+        // Guardar token en ticket si existe
+        final box = Hive.box('userData');
+        final ticketId = box.get('ticketId');
+        if (ticketId != null && ticketId.isNotEmpty) {
+          await FirebaseFirestore.instance
+              .collection('qr_codes')
+              .doc(ticketId)
+              .update({'fcmToken': token});
+          print('✅ Token FCM guardado para ticket $ticketId');
+        }
       } else {
         print("⚠️ No se pudo generar token FCM");
       }
@@ -89,7 +99,6 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
 
     if (kIsWeb) {
       final uri = Uri.base;
-
       final ticketNormal =
           uri.queryParameters['ticket'] ?? uri.queryParameters['ticketId'];
 
