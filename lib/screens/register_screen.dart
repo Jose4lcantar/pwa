@@ -15,6 +15,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // Nuevo
 
   bool _hasAcceptedPrivacy = false;
   bool _isLoading = true;
@@ -94,6 +95,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (_emailController.text.trim().isEmpty) { // Validación email
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ingresa tu correo electrónico.")),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -103,6 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           .update({
         "clientName": _nameController.text.trim(),
         "clientPhone": _phoneController.text.trim(),
+        "clientEmail": _emailController.text.trim(), // Nuevo
         "status": "iniciado", // No se rompe el flujo del valet
       });
 
@@ -112,7 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) {
         Navigator.pushReplacementNamed(
           context,
-          "/home", // como lo pediste
+          "/home",
           arguments: widget.ticketId,
         );
       }
@@ -195,6 +204,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.person),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      TextField(
+                        controller: _emailController, // Nuevo
+                        decoration: const InputDecoration(
+                          labelText: 'Correo electrónico',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.email),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 16),
 
