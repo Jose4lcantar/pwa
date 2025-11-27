@@ -37,7 +37,7 @@ Future<void> main() async {
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         // Generar token FCM Web con VAPID Key
         final token = await messaging.getToken(
-          vapidKey: "", // ⚡ Reemplaza con tu VAPID Key
+          vapidKey: "BObcTSbD5V3yjUPVzOmydB_0phZbQLakieo2d_yj5AHrWdh2y78c_4f4FqhJF167kHfhAunwc2FbfSusxUxMUa0", // ⚡ Reemplaza con tu VAPID Key
         );
 
         if (token != null) {
