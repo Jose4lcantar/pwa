@@ -34,6 +34,7 @@ Future<void> main() async {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      // Generar token FCM
       final token = await messaging.getToken(
         vapidKey: kIsWeb
             ? "BObcTSbD5V3yjUPVzOmydB_0phZbQLakieo2d_yj5AHrWdh2y78c_4f4FqhJF167kHfhAunwc2FbfSusxUxMUa0"
@@ -43,26 +44,27 @@ Future<void> main() async {
       if (token != null) {
         print("🎯 Token FCM: $token");
 
-        // Guardar token en Firestore para plataforma general
-        await FirebaseFirestore.instance
-            .collection('user_tokens')
-            .doc(token)
-            .set({
+        // Guardar token en la colección según plataforma
+        final collectionName = kIsWeb ? 'user_tokens_web' : 'user_tokens_mobile';
+        await FirebaseFirestore.instance.collection(collectionName).doc(token).set({
           'token': token,
           'platform': kIsWeb ? 'web' : 'mobile',
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        print('✅ Token FCM guardado en user_tokens');
+        print('✅ Token FCM guardado en $collectionName');
 
-        // Guardar token en ticket si existe
+        // Guardar token en el ticket si existe
         final box = Hive.box('userData');
         final ticketId = box.get('ticketId');
         if (ticketId != null && ticketId.isNotEmpty) {
+          final ticketUpdate = kIsWeb
+              ? {'fcmTokenWeb': token}
+              : {'fcmTokenMobile': token};
           await FirebaseFirestore.instance
               .collection('qr_codes')
               .doc(ticketId)
-              .update({'fcmToken': token});
+              .update(ticketUpdate);
           print('✅ Token FCM guardado para ticket $ticketId');
         }
       } else {
@@ -133,14 +135,17 @@ class _ValetFlowQRAppState extends State<ValetFlowQRApp> {
   Future<void> registerToken(String ticketId) async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
-
       if (token != null) {
+        final updateData = kIsWeb
+            ? {'fcmTokenWeb': token}
+            : {'fcmTokenMobile': token};
+
         await FirebaseFirestore.instance
             .collection('qr_codes')
             .doc(ticketId)
-            .update({'fcmToken': token});
+            .update(updateData);
 
-        print('✅ Token FCM guardado para ticket $ticketId');
+        print('✅ Token FCM registrado para ticket $ticketId');
       }
     } catch (e) {
       print('⚠️ Error registrando token: $e');
