@@ -23,7 +23,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js"></script>
 
   <script>
-    // Configuración de Firebase (web)
+    // Config web de firebase_options.dart
     const firebaseConfig = {
       apiKey: "AIzaSyCTSWg1isO7d_zgSKeMTwIjB8NSp_gBU0o",
       appId: "1:835667889247:web:6d86da70f314e33dea9fea",
@@ -33,14 +33,13 @@
       storageBucket: "valetflowqr-40544.firebasestorage.app"
     };
 
-    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
     const messaging = firebase.messaging();
 
     // Registrar Service Worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/firebase-messaging-sw.js") // ← path absoluto a public/
+        .register("firebase-messaging-sw.js")   // ← SIN SLASH
         .then((registration) => {
           console.log("🎯 Service Worker registrado:", registration);
         })
@@ -55,7 +54,7 @@
   <script src="flutter_bootstrap.js" async></script>
 
   <script>
-    // Solicitar permiso y obtener FCM token
+    // 🟢 Se ejecuta cuando Flutter ya está listo y el SW está activo
     async function requestPermissionAndGetToken() {
       try {
         const permission = await Notification.requestPermission();
@@ -74,7 +73,7 @@
       }
     }
 
-    // Ejecutar cuando la app ya cargó
+    // 🟢 Llamar cuando la app ya cargó
     window.addEventListener("load", () => {
       requestPermissionAndGetToken();
     });
