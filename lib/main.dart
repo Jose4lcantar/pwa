@@ -23,6 +23,18 @@ Future<void> main() async {
 
     print('✅ Firebase inicializado correctamente');
 
+    // 🔹 Habilitar persistencia offline
+    if (kIsWeb) {
+      await FirebaseFirestore.instance.enablePersistence();
+      print('✅ Firestore persistencia web habilitada');
+    } else {
+      FirebaseFirestore.instance.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+      print('✅ Firestore persistencia móvil habilitada');
+    }
+
     final messaging = FirebaseMessaging.instance;
 
     // Pedir permisos de notificación
